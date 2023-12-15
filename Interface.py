@@ -2,10 +2,10 @@ import dearpygui.dearpygui as dpg
 
 class Interface:
     """
-    A classe gerencia a criação e interação com a interface gráfica usando Dear PyGui.
+    Interface: a classe gerencia a criação e interação com a interface gráfica usando Dear PyGui.
     Contém os métodos para ler o texto de entrada do usuário.
     """
-    
+
     # Initializes Dear PyGui context and setup interface (public)
     def __init__(self):
         dpg.create_context()
