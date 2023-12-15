@@ -63,4 +63,5 @@ class Interface:
             dpg.add_text("Filename")
             dpg.add_input_text(tag="__filename_input")
             dpg.add_button(label="Generate", callback=self._btn_generate)
+            dpg.add_separator()
             dpg.add_button(label="Save", callback=self._btn_save)
