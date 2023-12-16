@@ -7,10 +7,10 @@ class Rules:
     Rules: o objetivo deste classe é mapear a transformação do texto
     para elementos musicais.
 
-    Para Rules que possuem regras que são prefixo de outras, ordene
-    em ordem de prioridade. O calculo de nota é feito relativo ao C1
-    TODO
-    encontrar um jeito de fazer apenas um nivel de currying
+    `mappings` deve estar em ordem decrescente de tamanho de string.
+    Além disso, é necessário especificar pelo menos o caso base de 
+    string vazia.
+    O calculo de nota é feito relativo ao C1.
     """
     def __init__(self, midiFile, bpm, vol, octave):
         self.dur = midiFile.ticks_per_beat
@@ -41,7 +41,8 @@ class Rules:
             '-': lambda: self._vol_adj(self.default_vol),
             '?': lambda: self._add_note(self._calculate_midi_note(random.choice('ABCDEFG'))),
             '\n': lambda: self._change_instrument(),
-            ';': lambda: self._bpm_adj(random.randint(60, 180))
+            ';': lambda: self._bpm_adj(random.randint(60, 180)),
+            '': lambda: self._NOP()
         }
 
     def _calculate_midi_note(self, note):
@@ -89,6 +90,12 @@ class Rules:
         def change_instrument():
             return md.Message('program_change', program=program, time=0),
         return change_instrument
+
+    def _NOP(self):
+        def NOP():
+            print("NOP Detected")
+            return ()
+        return NOP
 
     def initial_msgs(self):
         tempo = md.bpm2tempo(self.bpm)

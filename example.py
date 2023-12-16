@@ -4,8 +4,8 @@ from AudioConverter import AudioConverter
 from Rules import Rules
 
 mid = md.MidiFile()
-rules = Rules(mid, 100, 127, 4)
-converter = TextConverter(r'ABCDEFGBPM+abcdR+bdd', rules, mid)
+rules = Rules(mid, 120, 64, 4)
+converter = TextConverter('fefefdgfdc mmmBPM++abcdR+bdd-R-;abababcde', rules, mid)
 converter.compose()
 music = Music("sample.mid")
 recorder = AudioConverter(music)

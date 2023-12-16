@@ -18,7 +18,7 @@ class TextConverter:
     
     O objetivo dessa classe é transformar uma string de entrada
     em um arquivo MIDI de saída utilizando as regras de tranformação
-    de string fornecidas junto com a string
+    de string fornecida por Rules.
     """
     def __init__(self, input, rules, midiFile):
         self.input = input
@@ -48,20 +48,18 @@ class TextConverter:
         while tmp:
             # Get first match
             match = re.match(regex_pattern, tmp)
+            group = match.group()
 
-            if match:
-                group = match.group()
-                # Apply Rule
-                msgs = self.rules.mappings[group]()()
-                # Append Messages
-                for msg in msgs:
-                    print(msg)
-                    track.append(msg)
-                # Reduce string
-                tmp = tmp[len(group):]
-            else:
-                #NOTE: o ideal seria passar esse caso de NOP para o Rules
-                # porem isso implica em mudar a forma que o regex eh criado
-                tmp = tmp[1:]
+            # Apply Rule
+            msgs = self.rules.mappings[group]()()
+
+            # Append Messages
+            for msg in msgs:
+                print(msg)
+                track.append(msg)
+
+            # Reduce string
+            i = len(group) if len(group) > 0 else 1
+            tmp = tmp[i:]
 
         self.mid.save("sample.mid")
