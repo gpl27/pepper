@@ -5,7 +5,7 @@ from Rules import Rules
 
 mid = md.MidiFile()
 rules = Rules(mid, 120, 64, 4)
-converter = TextConverter('fefefdgfdc mmmBPM++abcdR+bdd-R-;abababcde', rules, mid)
+converter = TextConverter('O fueoefdgfdc BPM++abcdR+bdd-R-;abababcde', rules, mid)
 converter.compose()
 music = Music("sample.mid")
 recorder = AudioConverter(music)

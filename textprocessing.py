@@ -41,8 +41,7 @@ class TextConverter:
             track.append(msg)
 
         # Build regex from Rules
-        keys_regex = '|'.join(re.escape(key) for key in self.rules.mappings.keys())
-        regex_pattern = f'({keys_regex})'
+        regex_pattern = self.rules.get_regex()
 
         tmp = self.input
         while tmp:
@@ -51,7 +50,7 @@ class TextConverter:
             group = match.group()
 
             # Apply Rule
-            msgs = self.rules.mappings[group]()()
+            msgs = self.rules.get_msgs(group)
 
             # Append Messages
             for msg in msgs:

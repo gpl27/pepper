@@ -1,3 +1,4 @@
+import re
 import random
 import mido as md
 
@@ -18,6 +19,8 @@ class Rules:
         self.default_vol = vol
         self.vol = self.default_vol
         self.octave = octave
+        self.program = 0
+        self.p_map = ''
         self.mappings = {
             'BPM+': lambda: self._bpm_adj(self.bpm+80),
             'R+': lambda: self._octave_adj(self.octave+1),
@@ -36,17 +39,39 @@ class Rules:
             'e': lambda: self._add_note(self._calculate_midi_note('E')),
             'f': lambda: self._add_note(self._calculate_midi_note('F')),
             'g': lambda: self._add_note(self._calculate_midi_note('G')),
-            ' ': lambda: self._add_note(0),
+            'O': lambda: self._repeat(),
+            'o': lambda: self._repeat(),
+            'U': lambda: self._repeat(),
+            'u': lambda: self._repeat(),
+            'I': lambda: self._repeat(),
+            'i': lambda: self._repeat(),
+            ' ': lambda: self._add_rest(),
             '+': lambda: self._vol_adj(self.vol*2),
             '-': lambda: self._vol_adj(self.default_vol),
             '?': lambda: self._add_note(self._calculate_midi_note(random.choice('ABCDEFG'))),
-            '\n': lambda: self._change_instrument(),
+            '\n': lambda: self._change_instrument(0), # TODO: escolher para qual instrumento mudar
             ';': lambda: self._bpm_adj(random.randint(60, 180)),
             '': lambda: self._NOP()
         }
+    
+    def get_regex(self):
+        keys_regex = '|'.join(re.escape(key) for key in self.mappings.keys())
+        return f'({keys_regex})'
+
+    def get_msgs(self, group):
+        msgs = self.mappings[group]()()
+        self.p_map = group
+        return msgs
 
     def _calculate_midi_note(self, note):
         offset = {
+            'c': 0,
+            'd': 2,
+            'e': 4,
+            'f': 5,
+            'g': 7,
+            'a': 9,
+            'b': 11,
             'C': 0,
             'D': 2,
             'E': 4,
@@ -62,6 +87,12 @@ class Rules:
             return (md.Message('note_on', note=note, time=0),
                     md.Message('note_off', note=note, time=self.dur))
         return add_note
+    
+    def _add_rest(self):
+        def add_rest():
+            return (md.Message('note_on', note=0, velocity=0, time=0),
+                    md.Message('note_off', note=0, velocity=0, time=self.dur))
+        return add_rest
 
     def _vol_adj(self, value):
         value = value if value <= 127 and value >= 0 else self.vol
@@ -84,12 +115,22 @@ class Rules:
             return ()
         return octave_adj
     
-    def _change_instrument(self):
-        #TODO
-        program = 0
+    def _change_instrument(self, value):
+        self.program = value
         def change_instrument():
-            return md.Message('program_change', program=program, time=0),
+            return md.Message('program_change', program=value, time=0),
         return change_instrument
+
+    def _repeat(self):
+        if self.p_map != '' and self.p_map in 'AaBbCcDdEeFfGg':
+            return self._add_note(self._calculate_midi_note(self.p_map))
+        else:
+            def telefone():
+                return (md.Message('program_change', program=124, time=0),
+                        md.Message('note_on', note=69, time=0),
+                        md.Message('note_off', note=69, time=self.dur),
+                        md.Message('program_change', program=self.program, time=0))
+            return telefone
 
     def _NOP(self):
         def NOP():
