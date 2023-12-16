@@ -13,13 +13,13 @@ class Rules:
     string vazia.
     O calculo de nota é feito relativo ao C1.
     """
-    def __init__(self, midiFile, bpm, vol, octave):
-        self.dur = midiFile.ticks_per_beat
+    def __init__(self, music, bpm, vol, octave, program):
+        self.dur = music.mid.ticks_per_beat
         self.bpm = bpm
         self.default_vol = vol
         self.vol = self.default_vol
         self.octave = octave
-        self.program = 0
+        self.program = program
         self.p_map = ''
         self.mappings = {
             'BPM+': lambda: self._bpm_adj(self.bpm+80),

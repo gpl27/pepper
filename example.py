@@ -3,10 +3,10 @@ from textprocessing import TextConverter, Music
 from AudioConverter import AudioConverter
 from Rules import Rules
 
-mid = md.MidiFile()
-rules = Rules(mid, 120, 64, 4)
-converter = TextConverter('O fueoefdgfdc BPM++abcdR+bdd-R-;abababcde', rules, mid)
-converter.compose()
-music = Music("sample.mid")
+music = Music()
+rules = Rules(music, 120, 64, 4, 0)
+converter = TextConverter('O fueoefdgfdc BPM++abcdR+bdd-R-;abababcde', rules)
+converter.compose(music)
+music.save("sample.mid")
 recorder = AudioConverter(music)
 recorder.playback()
