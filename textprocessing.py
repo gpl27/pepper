@@ -21,6 +21,9 @@ class Music:
     def save(self, filename):
         self.filename = filename
         self.mid.save(filename)
+    
+    def get_ticks(self):
+        return self.mid.ticks_per_beat
 
     def calc_length(self):
         pass
@@ -53,7 +56,8 @@ class TextConverter:
             track.append(msg)
 
         # Build regex from Rules
-        regex_pattern = self.rules.get_regex()
+        keys = self.rules.get_keys()
+        regex_pattern = '|'.join(re.escape(key) for key in keys)
 
         tmp = self.input
         while tmp:

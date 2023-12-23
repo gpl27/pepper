@@ -13,8 +13,8 @@ class Rules:
     string vazia.
     O calculo de nota é feito relativo ao C1.
     """
-    def __init__(self, music, bpm, vol, octave, program):
-        self.dur = music.mid.ticks_per_beat
+    def __init__(self, ticks: int, bpm: int, vol: int, octave: int, program: int):
+        self.ticks = ticks
         self.bpm = bpm
         self.default_vol = vol
         self.vol = self.default_vol
@@ -22,56 +22,53 @@ class Rules:
         self.program = program
         self.p_map = ''
         self.mappings = {
-            'BPM+': lambda: self._bpm_adj(self.bpm+80),
-            'R+': lambda: self._octave_adj(self.octave+1),
-            'R-': lambda: self._octave_adj(self.octave-1),
-            'A': lambda: self._add_note(self._calculate_midi_note('A')), 
-            'B': lambda: self._add_note(self._calculate_midi_note('B')),
-            'C': lambda: self._add_note(self._calculate_midi_note('C')),
-            'D': lambda: self._add_note(self._calculate_midi_note('D')),
-            'E': lambda: self._add_note(self._calculate_midi_note('E')),
-            'F': lambda: self._add_note(self._calculate_midi_note('F')),
-            'G': lambda: self._add_note(self._calculate_midi_note('G')),
-            'a': lambda: self._add_note(self._calculate_midi_note('A')), 
-            'b': lambda: self._add_note(self._calculate_midi_note('B')),
-            'c': lambda: self._add_note(self._calculate_midi_note('C')),
-            'd': lambda: self._add_note(self._calculate_midi_note('D')),
-            'e': lambda: self._add_note(self._calculate_midi_note('E')),
-            'f': lambda: self._add_note(self._calculate_midi_note('F')),
-            'g': lambda: self._add_note(self._calculate_midi_note('G')),
-            'O': lambda: self._repeat(),
-            'o': lambda: self._repeat(),
-            'U': lambda: self._repeat(),
-            'u': lambda: self._repeat(),
-            'I': lambda: self._repeat(),
-            'i': lambda: self._repeat(),
-            ' ': lambda: self._add_rest(),
-            '+': lambda: self._vol_adj(self.vol*2),
-            '-': lambda: self._vol_adj(self.default_vol),
-            '?': lambda: self._add_note(self._calculate_midi_note(random.choice('ABCDEFG'))),
-            '\n': lambda: self._change_instrument(0), # TODO: escolher para qual instrumento mudar
-            ';': lambda: self._bpm_adj(random.randint(60, 180)),
-            '': lambda: self._NOP()
+            'BPM+': self._BPMp_map,
+            'R+': self._Rp_map,
+            'R-': self._Rm_map,
+            'A': self._A_map, 
+            'B': self._B_map,
+            'C': self._C_map,
+            'D': self._D_map,
+            'E': self._E_map,
+            'F': self._F_map,
+            'G': self._G_map,
+            'a': self._A_map, 
+            'b': self._B_map,
+            'c': self._C_map,
+            'd': self._D_map,
+            'e': self._E_map,
+            'f': self._F_map,
+            'g': self._G_map,
+            'O': self._repeat,
+            'o': self._repeat,
+            'U': self._repeat,
+            'u': self._repeat,
+            'I': self._repeat,
+            'i': self._repeat,
+            ' ': self._rest_map,
+            '+': self._p_map,
+            '-': self._m_map,
+            '?': self._rnote_map,
+            '\n': self._nl_map, # TODO: escolher para qual instrumento mudar
+            ';': self._sc_map,
+            '': self._NOP
         }
-    
-    def get_regex(self):
-        keys_regex = '|'.join(re.escape(key) for key in self.mappings.keys())
-        return f'({keys_regex})'
 
-    def get_msgs(self, group):
-        msgs = self.mappings[group]()()
+    def initial_msgs(self):
+        tempo = md.bpm2tempo(self.bpm)
+        return (md.MetaMessage('set_tempo', tempo=tempo),
+                md.Message('control_change', control=7, value=self.default_vol))
+    
+    def get_keys(self) -> list:
+        return self.mappings.keys()
+
+    def get_msgs(self, group) -> tuple:
+        msgs = self.mappings[group]()
         self.p_map = group
         return msgs
 
-    def _calculate_midi_note(self, note):
+    def _note2midi(self, note):
         offset = {
-            'c': 0,
-            'd': 2,
-            'e': 4,
-            'f': 5,
-            'g': 7,
-            'a': 9,
-            'b': 11,
             'C': 0,
             'D': 2,
             'E': 4,
@@ -82,63 +79,90 @@ class Rules:
         }
         return 12 + 12*self.octave + offset[note]
 
-    def _add_note(self, note):
-        def add_note():
-            return (md.Message('note_on', note=note, time=0),
-                    md.Message('note_off', note=note, time=self.dur))
-        return add_note
-    
-    def _add_rest(self):
-        def add_rest():
-            return (md.Message('note_on', note=0, velocity=0, time=0),
-                    md.Message('note_off', note=0, velocity=0, time=self.dur))
-        return add_rest
-
-    def _vol_adj(self, value):
-        value = value if value <= 127 and value >= 0 else self.vol
-        self.vol = value
-        def vol_adj():
-            return md.Message('control_change', control=7, value=value),
-        return vol_adj
-
-    def _bpm_adj(self, value):
-        self.bpm = value
-        tempo = md.bpm2tempo(value)
-        def bpm_adj():
-            return md.MetaMessage('set_tempo', tempo=tempo),
-        return bpm_adj
-    
-    def _octave_adj(self, value):
-        value = value if value <= 9 and value >= 1 else self.octave
-        self.octave = value
-        def octave_adj():
-            return ()
-        return octave_adj
-    
-    def _change_instrument(self, value):
-        self.program = value
-        def change_instrument():
-            return md.Message('program_change', program=value, time=0),
-        return change_instrument
-
-    def _repeat(self):
-        if self.p_map != '' and self.p_map in 'AaBbCcDdEeFfGg':
-            return self._add_note(self._calculate_midi_note(self.p_map))
-        else:
-            def telefone():
-                return (md.Message('program_change', program=124, time=0),
-                        md.Message('note_on', note=69, time=0),
-                        md.Message('note_off', note=69, time=self.dur),
-                        md.Message('program_change', program=self.program, time=0))
-            return telefone
-
-    def _NOP(self):
-        def NOP():
-            print("NOP Detected")
-            return ()
-        return NOP
-
-    def initial_msgs(self):
+    def _BPMp_map(self) -> tuple:
+        self.bpm += 80
         tempo = md.bpm2tempo(self.bpm)
-        return (md.MetaMessage('set_tempo', tempo=tempo),
-                md.Message('control_change', control=7, value=self.default_vol))
+        return md.MetaMessage('set_tempo', tempo=tempo),
+
+    def _Rp_map(self) -> tuple:
+        self.octave = self.octave+1 if self.octave+1 < 10 else self.octave
+        return ()
+
+    def _Rm_map(self) -> tuple:
+        self.octave = self.octave-1 if self.octave-1 > 0 else self.octave
+        return ()
+
+    def _A_map(self) -> tuple:
+        note = self._note2midi('A')
+        return (md.Message('note_on', note=note, time=0),
+                md.Message('note_off', note=note, time=self.ticks))
+
+    def _B_map(self) -> tuple:
+        note = self._note2midi('B')
+        return (md.Message('note_on', note=note, time=0),
+                md.Message('note_off', note=note, time=self.ticks))
+
+    def _C_map(self) -> tuple:
+        note = self._note2midi('C')
+        return (md.Message('note_on', note=note, time=0),
+                md.Message('note_off', note=note, time=self.ticks))
+
+    def _D_map(self) -> tuple:
+        note = self._note2midi('D')
+        return (md.Message('note_on', note=note, time=0),
+                md.Message('note_off', note=note, time=self.ticks))
+
+    def _E_map(self) -> tuple:
+        note = self._note2midi('E')
+        return (md.Message('note_on', note=note, time=0),
+                md.Message('note_off', note=note, time=self.ticks))
+
+    def _F_map(self) -> tuple:
+        note = self._note2midi('F')
+        return (md.Message('note_on', note=note, time=0),
+                md.Message('note_off', note=note, time=self.ticks))
+
+    def _G_map(self) -> tuple:
+        note = self._note2midi('G')
+        return (md.Message('note_on', note=note, time=0),
+                md.Message('note_off', note=note, time=self.ticks))
+
+    def _repeat(self) -> tuple:
+        if self.p_map != '' and self.p_map in 'AaBbCcDdEeFfGg':
+            note = self._note2midi(self.p_map.upper())
+            return (md.Message('note_on', note=note, time=0),
+                    md.Message('note_off', note=note, time=self.ticks))
+        else:
+            return (md.Message('program_change', program=124, time=0),
+                    md.Message('note_on', note=69, time=0),
+                    md.Message('note_off', note=69, time=self.ticks),
+                    md.Message('program_change', program=self.program, time=0))
+
+    def _rest_map(self) -> tuple: 
+        return (md.Message('note_on', note=0, velocity=0, time=0),
+                md.Message('note_off', note=0, velocity=0, time=self.ticks))
+
+    def _p_map(self) -> tuple:
+        self.vol = self.vol*2 if self.vol*2 < 128 else 127
+        return md.Message('control_change', control=7, value=self.vol),
+
+    def _m_map(self) -> tuple:
+        self.vol = self.default_vol
+        return md.Message('control_change', control=7, value=self.vol),
+
+    def _rnote_map(self) -> tuple:
+        note = self._note2midi(random.choice('ABCDEFG'))
+        return (md.Message('note_on', note=note, time=0),
+                md.Message('note_off', note=note, time=self.ticks))
+
+    def _nl_map(self) -> tuple: # TODO: choose how to change instrument
+        return ()
+
+    def _sc_map(self) -> tuple:
+        self.bpm = random.randint(60, 180)
+        tempo = md.bpm2tempo(self.bpm)
+        return md.MetaMessage('set_tempo', tempo=tempo),
+
+    def _NOP(self) -> tuple:
+        print("NOP")
+        return ()

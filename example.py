@@ -4,7 +4,7 @@ from AudioConverter import AudioConverter
 from Rules import Rules
 
 music = Music()
-rules = Rules(music, 120, 64, 4, 0)
+rules = Rules(music.get_ticks(), 120, 64, 4, 0)
 converter = TextConverter('O fueoefdgfdc BPM++abcdR+bdd-R-;abababcde', rules)
 converter.compose(music)
 music.save("sample.mid")
