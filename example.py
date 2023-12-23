@@ -1,7 +1,6 @@
 import mido as md
-from textprocessing import TextConverter, Music
+from textprocessing import TextConverter, Music, Rules
 from AudioConverter import AudioConverter
-from Rules import Rules
 
 music = Music()
 rules = Rules(music.get_ticks(), 120, 64, 4, 0)
