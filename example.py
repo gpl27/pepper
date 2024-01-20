@@ -1,4 +1,3 @@
-import mido as md
 from textprocessing import TextConverter, Music, Rules
 from AudioConverter import AudioConverter
 

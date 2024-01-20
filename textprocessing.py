@@ -2,8 +2,6 @@ import re
 import random
 import mido as md
 
-# TODO: fazer Music representar tanto um MIDI ja gravado,
-# quanto um MIDI futuro. Utilizar tanto em Rules quanto aqui
 class Music:
     """
     Music: representa uma música genérica.
@@ -59,6 +57,7 @@ class TextConverter:
         # Build regex from Rules
         keys = self.rules.get_keys()
         regex_pattern = '|'.join(re.escape(key) for key in keys)
+        print(regex_pattern)
 
         tmp = self.input
         while tmp:
