@@ -37,11 +37,13 @@ class Interface:
     # Buttons Functions (private)
     def _btn_generate(self):
         values = dpg.get_values(["__text_input", "__bpm_input", "__filename_input"])
-        if not (values[0] or values[1] or values[2]):
-            # TODO: add popup not valid
+        if (values[0] and values[1] and values[2]):
+            # TODO: add loading indicator, set UserInput
+            print("penis certo")
             pass
         else:
-            # TODO: add loading indicator, set UserInput
+            # TODO: add popup not valid
+            print("penis errado")
             pass
 
     def _btn_save(self):
