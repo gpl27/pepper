@@ -1,2 +1,2 @@
 # pepper
-Pepper's Private Band
+Pepper's PRIVATE Band
