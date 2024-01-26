@@ -10,6 +10,7 @@ class Interface:
     """
     # TODO: 
     # beautify interface (noggers)
+    # __ tags for diff
 
     # Consts
     MIN_BPM_VALUE = 20
@@ -42,8 +43,8 @@ class Interface:
     def _menu_import(self):
         # import the selected file and write the content into input text 
         def _menu_import_callback(sender, app_data):
-            file_path = app_data["file_path_name"]
-            with open(file_path, 'r') as f:
+            _file_path = app_data["file_path_name"]
+            with open(_file_path, 'r') as f:
                 Interface._file_content = f.read()
                 dpg.configure_item(item='_text_input', default_value=self._file_content)
 
@@ -61,28 +62,32 @@ class Interface:
     
     # check the inputs, generate the songs and show save buttons
     def _btn_generate(self, sender, app_data):
-        show_btn_save_flag = True
+        # aux function for showing error messages after generate button was pressed
+        def _show_error(tag, text):
+            dpg.configure_item(item=tag, default_value=text, show=True, color=(255, 0, 0, 255))
+
+        _show_btn_save_flag = True
 
         # clear error messages
         for input_error_tag in ["_text_input_error", "_bpm_input_error", "_filename_input_error"]:
             dpg.configure_item(item=input_error_tag, show=False)
 
-        values = dpg.get_values(["_text_input", "_bpm_input", "_filename_input"])
+        _values = dpg.get_values(["_text_input", "_bpm_input", "_filename_input"])
         
         # verify input values
-        if not values[0]:
-            self._show_error("_text_input_error", "Text input is required")
-            show_btn_save_flag = False
+        if not _values[0]:
+            _show_error("_text_input_error", "Text input is required")
+            _show_btn_save_flag = False
         
-        if not (self.MIN_BPM_VALUE <= int(values[1]) <= self.MAX_BPM_VALUE):
-            self._show_error("_bpm_input_error", f'BPM value must be between {self.MIN_BPM_VALUE} and {self.MAX_BPM_VALUE}')
-            show_btn_save_flag = False
+        if not (self.MIN_BPM_VALUE <= int(_values[1]) <= self.MAX_BPM_VALUE):
+            _show_error("_bpm_input_error", f'BPM value must be between {self.MIN_BPM_VALUE} and {self.MAX_BPM_VALUE}')
+            _show_btn_save_flag = False
         
-        if not values[2]:
-            self._show_error("_filename_input_error", "Filename is required")
-            show_btn_save_flag = False
+        if not _values[2]:
+            _show_error("_filename_input_error", "Filename is required")
+            _show_btn_save_flag = False
 
-        if show_btn_save_flag:
+        if _show_btn_save_flag:
 
             # present a loading indicator for couple seconds
             dpg.configure_item(item="_loading_indicator", show=True)
@@ -90,33 +95,30 @@ class Interface:
             dpg.configure_item(item="_loading_indicator", show=False)
 
             # integrate the input values with the Music class 
-            string_to_music = self._file_content + values[0]
-            rules = Rules(self._music.get_ticks(), 120, 64, 4, 0)
-            converter = TextConverter(string_to_music, rules)
-            converter.compose(self._music)
+            _string_to_music = self._file_content + _values[0]
+            _rules = Rules(self._music.get_ticks(), 120, 64, 4, 0)
+            _converter = TextConverter(_string_to_music, _rules)
+            _converter.compose(self._music)
             self._music.save("sample.mid")
-            recorder = AudioConverter(self._music)
+            _recorder = AudioConverter(self._music)
 
             # show save buttons
             dpg.configure_item(item="_btn_save_mid", show=True)
             dpg.configure_item(item="_btn_save_txt", show=True)
             
             # play the song
-            recorder.playback()
+            _recorder.playback()
     
-    # aux function for showing error messages after generate button was pressed
-    def _show_error(self, tag, text):
-        dpg.configure_item(item=tag, default_value=text, show=True, color=(255, 0, 0, 255))
 
     # save the generated song into a mid file after the generation of the song
     def _btn_save_mid(self):
-        filename = dpg.get_value("_filename_input")
+        _filename = dpg.get_value("_filename_input")
 
         # handle callback writing the input text in the dir/filename specified
         def _save_mid_callback(sender, app_data):
-            selected_directory = app_data["file_path_name"]
-            full_path = f"{selected_directory}/{filename}"
-            self._music.save(full_path)
+            _selected_directory = app_data["file_path_name"]
+            _full_path = f"{_selected_directory}/{_filename}"
+            self._music.save(_full_path)
             dpg.configure_item(item="_saved_mid", default_value="Saved .mid File!", show=True, color=(0, 255, 0, 255))
 
         # open dir selector for the mid file
@@ -125,15 +127,15 @@ class Interface:
 
     # save the input text as a txt file after the generation of the song 
     def _btn_save_txt(self):
-        filename = dpg.get_value("_filename_input")
+        _filename = dpg.get_value("_filename_input")
 
         # handle callback writing the input text in the dir/filename specified
         def _save_mid_callback(sender, app_data):
-            selected_directory = app_data["file_path_name"]
-            full_path = f"{selected_directory}/{filename}"
-            with open(full_path, "w") as file:
-                text = dpg.get_value("_text_input")
-                file.write(text)
+            _selected_directory = app_data["file_path_name"]
+            _full_path = f"{_selected_directory}/{_filename}"
+            with open(_full_path, "w") as file:
+                _text = dpg.get_value("_text_input")
+                file.write(_text)
             
             dpg.configure_item(item="_saved_txt", default_value="Saved .txt File!", show=True, color=(0, 255, 0, 255))
 
@@ -167,10 +169,10 @@ class Interface:
             
             dpg.add_button(label="Generate", callback=self._btn_generate)
             
+            dpg.add_separator()
+
             dpg.add_loading_indicator(tag="_loading_indicator", show=False)
 
-            dpg.add_separator()
-            
             # TODO: add music player from pygame and INTEGRATE
             # me right now:
             #             ⠀⠀⠀⠀⠀⠀   ⢀⣠⣖⣱⣞⡿⣽⣯⣿⣳⠄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
