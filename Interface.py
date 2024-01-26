@@ -40,20 +40,18 @@ class Interface:
 
     # Menu Functions (private)
     def _menu_import(self):
-        def callback(sender, app_data):
+        # import the selected file and write the content into input text 
+        def _menu_import_callback(sender, app_data):
             file_path = app_data["file_path_name"]
-            file_handler(file_path)
-
-        def file_handler(file_path):
             with open(file_path, 'r') as f:
                 Interface._file_content = f.read()
-                print(Interface._file_content)
                 dpg.configure_item(item='_text_input', default_value=self._file_content)
 
-        with dpg.file_dialog(directory_selector=False, show=True, callback = callback, tag="file_dialog_tag", width=self.MENU_WIDTH, height=self.MENU_HEIGHT):
+        # open file selector for the txt file
+        with dpg.file_dialog(directory_selector=False, show=True, callback=_menu_import_callback, tag="file_dialog_tag", width=self.MENU_WIDTH, height=self.MENU_HEIGHT):
             dpg.add_file_extension(".txt", color=(150, 255, 150, 255))
 
-
+    # gives information about the program
     def _menu_help(self):
         with dpg.window(label="Help Window", width=self.MENU_WIDTH, height=self.MENU_HEIGHT, show=True, no_collapse=True, no_resize=False):
             with dpg.group(width=self.MENU_WIDTH):
@@ -61,6 +59,7 @@ class Interface:
                 dpg.add_separator()
                 dpg.add_text("The software receives as input an unstructured text (like a short story or newspaper page) and generates a set of notes corresponding to the text according to some parameters (like timbre, rhythm, BPM). The parameters are defined via a mapping of text to musical information.", indent= 1, wrap=self.MENU_WIDTH-self.WINDOW_WRAP)
     
+    # check the inputs, generate the songs and show save buttons
     def _btn_generate(self, sender, app_data):
         show_btn_save_flag = True
 
@@ -84,26 +83,64 @@ class Interface:
             show_btn_save_flag = False
 
         if show_btn_save_flag:
+
             # present a loading indicator for couple seconds
             dpg.configure_item(item="_loading_indicator", show=True)
             time.sleep(2)
             dpg.configure_item(item="_loading_indicator", show=False)
 
-            dpg.configure_item(item="_btn_save", show=True)
-
-            string_to_music = Interface._file_content + values[0]
-            rules = Rules(Interface._music.get_ticks(), 120, 64, 4, 0)
+            # integrate the input values with the Music class 
+            string_to_music = self._file_content + values[0]
+            rules = Rules(self._music.get_ticks(), 120, 64, 4, 0)
             converter = TextConverter(string_to_music, rules)
-            converter.compose(Interface._music)
-            Interface._music.save("sample.mid")
-            recorder = AudioConverter(Interface._music)
-            recorder.playback()
+            converter.compose(self._music)
+            self._music.save("sample.mid")
+            recorder = AudioConverter(self._music)
+
+            # show save buttons
+            dpg.configure_item(item="_btn_save_mid", show=True)
+            dpg.configure_item(item="_btn_save_txt", show=True)
             
+            # play the song
+            recorder.playback()
+    
+    # aux function for showing error messages after generate button was pressed
     def _show_error(self, tag, text):
         dpg.configure_item(item=tag, default_value=text, show=True, color=(255, 0, 0, 255))
 
-    def _btn_save(self):
-        pass
+    # save the generated song into a mid file after the generation of the song
+    def _btn_save_mid(self):
+        filename = dpg.get_value("_filename_input")
+
+        # handle callback writing the input text in the dir/filename specified
+        def _save_mid_callback(sender, app_data):
+            selected_directory = app_data["file_path_name"]
+            full_path = f"{selected_directory}/{filename}"
+            self._music.save(full_path)
+            dpg.configure_item(item="_saved_mid", default_value="Saved .mid File!", show=True, color=(0, 255, 0, 255))
+
+        # open dir selector for the mid file
+        with dpg.file_dialog(directory_selector=True, show=True, tag="file_dialog_tag", callback=_save_mid_callback, width=self.MENU_WIDTH, height=self.MENU_HEIGHT):
+            pass
+
+    # save the input text as a txt file after the generation of the song 
+    def _btn_save_txt(self):
+        filename = dpg.get_value("_filename_input")
+
+        # handle callback writing the input text in the dir/filename specified
+        def _save_mid_callback(sender, app_data):
+            selected_directory = app_data["file_path_name"]
+            full_path = f"{selected_directory}/{filename}"
+            with open(full_path, "w") as file:
+                text = dpg.get_value("_text_input")
+                file.write(text)
+            
+            dpg.configure_item(item="_saved_txt", default_value="Saved .txt File!", show=True, color=(0, 255, 0, 255))
+
+        # open dir selector for the txt file
+        with dpg.file_dialog(directory_selector=True, show=True, tag="file_dialog_tag", callback=_save_mid_callback, width=self.MENU_WIDTH, height=self.MENU_HEIGHT):
+            pass
+
 
     # Sets up the interface (private)    
     def _setup_interface(self):
@@ -162,4 +199,8 @@ class Interface:
             # ⠀⣏⣾⡏⣞⡜⣳⣽⣮⡗⣼⠟⣻⠔⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢿⠿⢿⡆⡝⣾⢉⣷⠸⣜⢥⢺⣬⢶⡋⡽⡇⠀
             # ⢰⣷⡿⣘⣧⣚⠥⣾⣻⣵⢏⡢⣹⢯⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣼⣾⣸⣧⣹⢇⢊⠼⣟⡿⣎⡝⢦⢣⣝⠲⡇⠀
 
-            dpg.add_button(tag="_btn_save", label="Save", callback=self._btn_save, show=False)
+            dpg.add_button(tag="_btn_save_mid", label="Save Mid", callback=self._btn_save_mid, show=False)
+            dpg.add_text(tag="_saved_mid", show=False)
+
+            dpg.add_button(tag="_btn_save_txt", label="Save Text", callback=self._btn_save_txt, show=False)
+            dpg.add_text(tag="_saved_txt", show=False)
