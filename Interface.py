@@ -1,13 +1,17 @@
 import dearpygui.dearpygui as dpg
+import time
+from textprocessing import TextConverter, Music, Rules
+from AudioConverter import AudioConverter
 
 class Interface:
     """
     Interface: a classe gerencia a criação e interação com a interface gráfica usando Dear PyGui.
     Contém os métodos para ler o texto de entrada do usuário.
     """
-    # TODO: beautify interface (noggers)
+    # TODO: 
+    # beautify interface (noggers)
 
-    # Constants
+    # Consts
     MIN_BPM_VALUE = 20
     MAX_BPM_VALUE = 200
     MENU_WIDTH = 500
@@ -16,6 +20,10 @@ class Interface:
     WINDOW_HEIGHT = 720
     WINDOW_WRAP = 20
 
+    # Private vars
+    _file_content = ''
+    _music = Music()
+    
     # Initializes Dear PyGui context and setup interface (public)
     def __init__(self):
         dpg.create_context()
@@ -32,8 +40,19 @@ class Interface:
 
     # Menu Functions (private)
     def _menu_import(self):
-        # TODO: add file selector
-        pass
+        def callback(sender, app_data):
+            file_path = app_data["file_path_name"]
+            file_handler(file_path)
+
+        def file_handler(file_path):
+            with open(file_path, 'r') as f:
+                Interface._file_content = f.read()
+                print(Interface._file_content)
+                dpg.configure_item(item='_text_input', default_value=self._file_content)
+
+        with dpg.file_dialog(directory_selector=False, show=True, callback = callback, tag="file_dialog_tag", width=self.MENU_WIDTH, height=self.MENU_HEIGHT):
+            dpg.add_file_extension(".txt", color=(150, 255, 150, 255))
+
 
     def _menu_help(self):
         with dpg.window(label="Help Window", width=self.MENU_WIDTH, height=self.MENU_HEIGHT, show=True, no_collapse=True, no_resize=False):
@@ -46,33 +65,44 @@ class Interface:
         show_btn_save_flag = True
 
         # clear error messages
-        for input_error_tag in ["__text_input_error", "__bpm_input_error", "__filename_input_error"]:
+        for input_error_tag in ["_text_input_error", "_bpm_input_error", "_filename_input_error"]:
             dpg.configure_item(item=input_error_tag, show=False)
 
-        values = dpg.get_values(["__text_input", "__bpm_input", "__filename_input"])
+        values = dpg.get_values(["_text_input", "_bpm_input", "_filename_input"])
         
         # verify input values
         if not values[0]:
-            self._show_error("__text_input_error", "Text input is required")
+            self._show_error("_text_input_error", "Text input is required")
             show_btn_save_flag = False
         
         if not (self.MIN_BPM_VALUE <= int(values[1]) <= self.MAX_BPM_VALUE):
-            self._show_error("__bpm_input_error", f'BPM value must be between {self.MIN_BPM_VALUE} and {self.MAX_BPM_VALUE}')
+            self._show_error("_bpm_input_error", f'BPM value must be between {self.MIN_BPM_VALUE} and {self.MAX_BPM_VALUE}')
             show_btn_save_flag = False
         
         if not values[2]:
-            self._show_error("__filename_input_error", "Filename is required and can't contain an extension in the name")
+            self._show_error("_filename_input_error", "Filename is required")
             show_btn_save_flag = False
 
-        # TODO: generate the song (integrate with our application)
         if show_btn_save_flag:
-            dpg.configure_item(item="btn_save", show=True)
+            # present a loading indicator for couple seconds
+            dpg.configure_item(item="_loading_indicator", show=True)
+            time.sleep(2)
+            dpg.configure_item(item="_loading_indicator", show=False)
+
+            dpg.configure_item(item="_btn_save", show=True)
+
+            string_to_music = Interface._file_content + values[0]
+            rules = Rules(Interface._music.get_ticks(), 120, 64, 4, 0)
+            converter = TextConverter(string_to_music, rules)
+            converter.compose(Interface._music)
+            Interface._music.save("sample.mid")
+            recorder = AudioConverter(Interface._music)
+            recorder.playback()
             
     def _show_error(self, tag, text):
         dpg.configure_item(item=tag, default_value=text, show=True, color=(255, 0, 0, 255))
 
     def _btn_save(self):
-        # TODO: check if was generated
         pass
 
     # Sets up the interface (private)    
@@ -85,21 +115,23 @@ class Interface:
 
             # Input text
             dpg.add_text("Your Text")
-            dpg.add_input_text(tag="__text_input", multiline=True)
-            dpg.add_text(tag="__text_input_error", show=False)
+            dpg.add_input_text(tag="_text_input", multiline=True)
+            dpg.add_text(tag="_text_input_error", show=False)
             
             # Input BPM
             dpg.add_text("BPM")
-            dpg.add_input_int(tag="__bpm_input", min_value=self.MIN_BPM_VALUE, max_value=self.MAX_BPM_VALUE, min_clamped=True, max_clamped=True)
-            dpg.add_text(tag="__bpm_input_error", show=False)
+            dpg.add_input_int(tag="_bpm_input", min_value=self.MIN_BPM_VALUE, max_value=self.MAX_BPM_VALUE, min_clamped=True, max_clamped=True)
+            dpg.add_text(tag="_bpm_input_error", show=False)
             
             # Input Filename
             dpg.add_text("Filename")
-            dpg.add_input_text(tag="__filename_input")
-            dpg.add_text(tag="__filename_input_error", show=False)
+            dpg.add_input_text(tag="_filename_input")
+            dpg.add_text(tag="_filename_input_error", show=False)
             
             dpg.add_button(label="Generate", callback=self._btn_generate)
             
+            dpg.add_loading_indicator(tag="_loading_indicator", show=False)
+
             dpg.add_separator()
             
             # TODO: add music player from pygame and INTEGRATE
@@ -130,4 +162,4 @@ class Interface:
             # ⠀⣏⣾⡏⣞⡜⣳⣽⣮⡗⣼⠟⣻⠔⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢿⠿⢿⡆⡝⣾⢉⣷⠸⣜⢥⢺⣬⢶⡋⡽⡇⠀
             # ⢰⣷⡿⣘⣧⣚⠥⣾⣻⣵⢏⡢⣹⢯⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣼⣾⣸⣧⣹⢇⢊⠼⣟⡿⣎⡝⢦⢣⣝⠲⡇⠀
 
-            dpg.add_button(tag="btn_save", label="Save", callback=self._btn_save, show=False)
+            dpg.add_button(tag="_btn_save", label="Save", callback=self._btn_save, show=False)
