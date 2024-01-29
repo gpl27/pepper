@@ -15,7 +15,11 @@ class Music:
             self.mid = md.MidiFile(filename)
         else:
             self.mid = md.MidiFile()
+        self.mid.add_track()
         self.length = 0
+
+    def append(self, msg):
+        self.mid.tracks[0].append(msg)
 
     def save(self, filename):
         self.filename = filename
@@ -46,12 +50,9 @@ class TextConverter:
         self.rules = rules
 
     def compose(self, music):
-        track = md.MidiTrack()
-        music.mid.tracks.append(track)
-
         # Apply initial settings
         for msg in self.rules.initial_msgs():
-            track.append(msg)
+            music.append(msg)
 
         # Build regex from Rules
         keys = self.rules.get_keys()
@@ -68,7 +69,7 @@ class TextConverter:
 
             # Append Messages
             for msg in msgs:
-                track.append(msg)
+                music.append(msg)
 
             # Reduce string
             i = len(group) if len(group) > 0 else 1

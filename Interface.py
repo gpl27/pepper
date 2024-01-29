@@ -48,7 +48,7 @@ class Interface:
             _file_path = app_data["file_path_name"]
             with open(_file_path, 'r') as f:
                 Interface._file_content = f.read()
-                dpg.configure_item(item='_text_input', default_value=self._file_content)
+                dpg.configure_item(item='__text_input', default_value=self._file_content)
 
         # open file selector for the txt file
         with dpg.file_dialog(directory_selector=False, show=True, callback=_menu_import_callback, tag="file_dialog_tag", width=self.MENU_WIDTH, height=self.MENU_HEIGHT):
@@ -231,7 +231,7 @@ class Interface:
                 dpg.add_image_button("__texture_help", tag="__filename_input_help")
                 with dpg.tooltip("__filename_input_help"):
                     dpg.add_text("Here you write the output filename. \n"
-                                 "Don't worry with the extension (.mid and/or .txt), this will be added after :).\n"
+                                 "Don't worry with the extension (.mid and/or .txt), this will be added later :).\n"
                                  "The filename can't be empty!")
 
             dpg.add_input_text(tag="__filename_input")
