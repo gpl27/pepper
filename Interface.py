@@ -31,7 +31,7 @@ class Interface:
     def __init__(self):
         dpg.create_context()
         self._setup_interface()
-        dpg.create_viewport(title='Title', width=self.WINDOW_WIDTH, height=self.WINDOW_HEIGHT)
+        dpg.create_viewport(title='Pepper\'s Private Band', width=self.WINDOW_WIDTH, height=self.WINDOW_HEIGHT)
         dpg.setup_dearpygui()
         dpg.show_viewport()
         dpg.set_primary_window("__main_window", True)
