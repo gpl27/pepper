@@ -24,8 +24,8 @@ class Music:
     def get_ticks(self):
         return self.mid.ticks_per_beat
 
-    def calc_length(self):
-        pass
+    def get_length(self):
+        return self.mid.length
 
 class TextConverter:
     """
@@ -51,13 +51,11 @@ class TextConverter:
 
         # Apply initial settings
         for msg in self.rules.initial_msgs():
-            print(msg)
             track.append(msg)
 
         # Build regex from Rules
         keys = self.rules.get_keys()
         regex_pattern = '|'.join(re.escape(key) for key in keys)
-        print(regex_pattern)
 
         tmp = self.input
         while tmp:
@@ -70,7 +68,6 @@ class TextConverter:
 
             # Append Messages
             for msg in msgs:
-                print(msg)
                 track.append(msg)
 
             # Reduce string

@@ -8,3 +8,5 @@ converter.compose(music)
 music.save("sample.mid")
 recorder = AudioConverter(music)
 recorder.playback()
+while recorder.is_playing():
+    pass
