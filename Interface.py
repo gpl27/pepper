@@ -10,8 +10,8 @@ class Interface:
     Contém os métodos para ler o texto de entrada do usuário.
     """
     # TODO: 
-    # add tooltips
     # organize files
+    # interaction with music (start, stop, pause music)
 
     # Consts
     MIN_BPM_VALUE = 20
@@ -21,6 +21,7 @@ class Interface:
     WINDOW_WIDTH = 720
     WINDOW_HEIGHT = 720
     WINDOW_WRAP = 20
+    FONT_SIZE = 16
 
     # Private vars
     _file_content = ''
@@ -150,7 +151,7 @@ class Interface:
         with dpg.font_registry():
             # library limitations only supports full path of the font
             _cur_dir = os.getcwd()
-            _default_font = dpg.add_font(f'{_cur_dir}/UbuntuMono.ttf', 16)
+            _default_font = dpg.add_font(f'{_cur_dir}/UbuntuMono.ttf', self.FONT_SIZE)
 
         with dpg.window(tag="__main_window"):
             with dpg.menu_bar():
@@ -158,26 +159,64 @@ class Interface:
                     dpg.add_menu_item(label="Import File", callback=self._menu_import)
                 dpg.add_menu_item(label="Help", callback=self._menu_help)
 
+            # load the icon for tooltips
+            _help_width, _help_height, _help_channels, _help_data = dpg.load_image("icons8-help-18.png")
+            with dpg.texture_registry(show=False):
+                dpg.add_static_texture(_help_width, _help_height, _help_data, tag="__texture_tag")
+
+            dpg.add_spacer(height=5)
+
             # Input text
-            dpg.add_text("Your Text")
+            with dpg.group(horizontal=True):
+                dpg.add_text("Your Text")
+                dpg.add_image_button("__texture_tag", tag="__text_input_help")
+                with dpg.tooltip("__text_input_help"):
+                    dpg.add_text("Here you write the text that will be converted into music.\n"
+                                 "Can't be empty!")
+
             dpg.add_input_text(tag="__text_input", multiline=True)
             dpg.add_text(tag="__text_input_error", show=False)
+
+            
             
             # Input BPM
-            dpg.add_text("BPM")
+            with dpg.group(horizontal=True):
+                dpg.add_text("BPM")
+                dpg.add_image_button("__texture_tag", tag="__bpm_input_help")
+                with dpg.tooltip("__bpm_input_help"):
+                    dpg.add_text("Here you choose the BPM (Beats Per Minute) of the generated music.\n"
+                                 "Must be between 20 and 200!")
+
             dpg.add_input_int(tag="__bpm_input", min_value=self.MIN_BPM_VALUE, max_value=self.MAX_BPM_VALUE, min_clamped=True, max_clamped=True)
             dpg.add_text(tag="__bpm_input_error", show=False)
             
             # Input Filename
-            dpg.add_text("Filename")
+            with dpg.group(horizontal=True):
+                dpg.add_text("Filename")
+                dpg.add_image_button("__texture_tag", tag="__filename_input_help")
+                with dpg.tooltip("__filename_input_help"):
+                    dpg.add_text("Here you write the output filename. \n"
+                                 "Don't worry with the extension (.mid and/or .txt), this will be added after :).\n"
+                                 "The filename can't be empty!")
+
             dpg.add_input_text(tag="__filename_input")
             dpg.add_text(tag="__filename_input_error", show=False)
             
-            dpg.add_button(label="Generate", callback=self._btn_generate)
+            # Generate button
+            dpg.add_spacer(height=5)
+            dpg.add_button(tag="__btn_generate", label="Generate", callback=self._btn_generate)
+            with dpg.tooltip("__btn_generate"):
+                    dpg.add_text("Generate the Music! Let's dance \n"
+                                " (-_-) \n"
+                                " /) )> \n"
+                                "  / \ ")
             
             dpg.add_separator()
 
             dpg.add_loading_indicator(tag="__loading_indicator", show=False)
+            
+            dpg.add_spacer(height=15)
+
 
             # TODO: add music player from pygame and INTEGRATE
             # me right now:
@@ -207,11 +246,23 @@ class Interface:
             # ⠀⣏⣾⡏⣞⡜⣳⣽⣮⡗⣼⠟⣻⠔⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢿⠿⢿⡆⡝⣾⢉⣷⠸⣜⢥⢺⣬⢶⡋⡽⡇⠀
             # ⢰⣷⡿⣘⣧⣚⠥⣾⣻⣵⢏⡢⣹⢯⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣼⣾⣸⣧⣹⢇⢊⠼⣟⡿⣎⡝⢦⢣⣝⠲⡇⠀
 
-            dpg.add_button(tag="__btn_save_mid", label="Save Mid", callback=self._btn_save_mid, show=False)
-            dpg.add_text(tag="__saved_mid", show=False)
 
-            dpg.add_button(tag="__btn_save_txt", label="Save Text", callback=self._btn_save_txt, show=False)
-            dpg.add_text(tag="__saved_txt", show=False)
+            with dpg.group(horizontal=True):
+
+                # Save Mid button
+                dpg.add_button(tag="__btn_save_mid", label="Save Mid", callback=self._btn_save_mid, show=False)
+                dpg.add_text(tag="__saved_mid", show=False)
+                with dpg.tooltip("__btn_save_mid"):
+                        dpg.add_text("Save the music into a .mid file")
+
+                dpg.add_spacer(height=5)
+
+                # Save Text button
+                dpg.add_button(tag="__btn_save_txt", label="Save Text", callback=self._btn_save_txt, show=False)
+                dpg.add_text(tag="__saved_txt", show=False)
+                with dpg.tooltip("__btn_save_txt"):
+                    dpg.add_text("Save the input text into a .txt file\n"
+                                "You can import this text file after")
 
             # set font of specific widget
             dpg.bind_font(_default_font)
