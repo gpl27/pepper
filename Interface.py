@@ -11,7 +11,7 @@ class Interface:
     """
     # TODO: 
     # organize files
-    # interaction with music (start, stop, pause music)
+    # interaction with music (start, pause, restart music)
 
     # Consts
     MIN_BPM_VALUE = 20
@@ -62,13 +62,14 @@ class Interface:
                 dpg.add_separator()
                 dpg.add_text("The software receives as input an unstructured text (like a short story or newspaper page) and generates a set of notes corresponding to the text according to some parameters (like timbre, rhythm, BPM). The parameters are defined via a mapping of text to musical information.", indent= 1, wrap=self.MENU_WIDTH-self.WINDOW_WRAP)
     
+    # Buttons callbacks (private)
     # check the inputs, generate the songs and show save buttons
     def _btn_generate(self, sender, app_data):
         # aux function for showing error messages after generate button was pressed
         def _show_error(tag, text):
             dpg.configure_item(item=tag, default_value=text, show=True, color=(255, 0, 0, 255))
 
-        _show_btn_save_flag = True
+        _show_options_flag = True
 
         # clear error messages
         for input_error_tag in ["__text_input_error", "__bpm_input_error", "__filename_input_error"]:
@@ -79,38 +80,56 @@ class Interface:
         # verify input values
         if not _values[0]:
             _show_error("__text_input_error", "Text input is required")
-            _show_btn_save_flag = False
+            _show_options_flag = False
         
         if not (self.MIN_BPM_VALUE <= int(_values[1]) <= self.MAX_BPM_VALUE):
             _show_error("__bpm_input_error", f'BPM value must be between {self.MIN_BPM_VALUE} and {self.MAX_BPM_VALUE}')
-            _show_btn_save_flag = False
+            _show_options_flag = False
         
         if not _values[2]:
             _show_error("__filename_input_error", "Filename is required")
-            _show_btn_save_flag = False
+            _show_options_flag = False
 
-        if _show_btn_save_flag:
+        if _show_options_flag:
 
             # present a loading indicator for couple seconds
             dpg.configure_item(item="__loading_indicator", show=True)
             time.sleep(2)
             dpg.configure_item(item="__loading_indicator", show=False)
 
-            # integrate the input values with the Music class 
-            _string_to_music = self._file_content + _values[0]
-            _rules = Rules(self._music.get_ticks(), _values[1], 64, 4, 0)
-            _converter = TextConverter(_string_to_music, _rules)
-            _converter.compose(self._music)
-            self._music.save("sample.mid")
-            _recorder = AudioConverter(self._music)
+            # TODO: acho que tenq tira isso daqui e mover pra algum callback aqui embaixo 
+            # integrate the input values with the Music class                       # |
+            _string_to_music = self._file_content + _values[0]                      # |
+            _rules = Rules(self._music.get_ticks(), _values[1], 64, 4, 0)           # |
+            _converter = TextConverter(_string_to_music, _rules)                    # |
+            _converter.compose(self._music)                                         # |
+            self._music.save("sample.mid")                                          # |
+            _recorder = AudioConverter(self._music)                                 # |
+                                                                                    # |
+            # show music buttons                                                    # |
+            dpg.configure_item(item="__btn_play", show=True)                        # |
+            dpg.configure_item(item="__btn_pause", show=True)                       # |
+            dpg.configure_item(item="__btn_restart", show=True)                     # |  
+                                                                                    # |  
+            # show save buttons                                                     # |  
+            dpg.configure_item(item="__btn_save_mid", show=True)                    # |  
+            dpg.configure_item(item="__btn_save_txt", show=True)                    # |  
+                                                                                    # |  
+            # play the song                                                         # |  
+            _recorder.playback()                                                    # |  
+                                                                                    # |  
+    # TODO: todo (só toca musica depois que o botao é clicado)   <<<<------------------
+    # play the generated music
+    def _btn_play_callback():
+        pass
 
-            # show save buttons
-            dpg.configure_item(item="__btn_save_mid", show=True)
-            dpg.configure_item(item="__btn_save_txt", show=True)
-            
-            # play the song
-            _recorder.playback()
-    
+    # pause the generated music
+    def _btn_pause_callback():
+        pass
+
+    # restart the generated music
+    def _btn_restart_callback():
+        pass
 
     # save the generated song into a mid file after the generation of the song
     def _btn_save_mid(self):
@@ -159,17 +178,33 @@ class Interface:
                     dpg.add_menu_item(label="Import File", callback=self._menu_import)
                 dpg.add_menu_item(label="Help", callback=self._menu_help)
 
-            # load the icon for tooltips
-            _help_width, _help_height, _help_channels, _help_data = dpg.load_image("icons8-help-18.png")
+            # Load images and icons
+            # Help Image
+            _img_width, _img_height, _img_channels, _img_data = dpg.load_image("icons8-help-18.png")
             with dpg.texture_registry(show=False):
-                dpg.add_static_texture(_help_width, _help_height, _help_data, tag="__texture_tag")
+                dpg.add_static_texture(_img_width, _img_height, _img_data, tag="__texture_help")
 
-            dpg.add_spacer(height=5)
+            # Play image
+            _img_width, _img_height, _img_channels, _img_data = dpg.load_image("icons8-play-18.png")
+            with dpg.texture_registry(show=False):
+                dpg.add_static_texture(_img_width, _img_height, _img_data, tag="__texture_play")
+
+            # Pause image
+            _img_width, _img_height, _img_channels, _img_data = dpg.load_image("icons8-pause-18.png")
+            with dpg.texture_registry(show=False):
+                dpg.add_static_texture(_img_width, _img_height, _img_data, tag="__texture_pause")
+           
+            # Restart image
+            _img_width, _img_height, _img_channels, _img_data = dpg.load_image("icons8-restart-18.png")
+            with dpg.texture_registry(show=False):
+                dpg.add_static_texture(_img_width, _img_height, _img_data, tag="__texture_restart")
+
 
             # Input text
+            dpg.add_spacer(height=5)
             with dpg.group(horizontal=True):
                 dpg.add_text("Your Text")
-                dpg.add_image_button("__texture_tag", tag="__text_input_help")
+                dpg.add_image_button("__texture_help", tag="__text_input_help")
                 with dpg.tooltip("__text_input_help"):
                     dpg.add_text("Here you write the text that will be converted into music.\n"
                                  "Can't be empty!")
@@ -182,7 +217,7 @@ class Interface:
             # Input BPM
             with dpg.group(horizontal=True):
                 dpg.add_text("BPM")
-                dpg.add_image_button("__texture_tag", tag="__bpm_input_help")
+                dpg.add_image_button("__texture_help", tag="__bpm_input_help")
                 with dpg.tooltip("__bpm_input_help"):
                     dpg.add_text("Here you choose the BPM (Beats Per Minute) of the generated music.\n"
                                  "Must be between 20 and 200!")
@@ -193,7 +228,7 @@ class Interface:
             # Input Filename
             with dpg.group(horizontal=True):
                 dpg.add_text("Filename")
-                dpg.add_image_button("__texture_tag", tag="__filename_input_help")
+                dpg.add_image_button("__texture_help", tag="__filename_input_help")
                 with dpg.tooltip("__filename_input_help"):
                     dpg.add_text("Here you write the output filename. \n"
                                  "Don't worry with the extension (.mid and/or .txt), this will be added after :).\n"
@@ -213,40 +248,31 @@ class Interface:
             
             dpg.add_separator()
 
+            # Loading indicator
             dpg.add_loading_indicator(tag="__loading_indicator", show=False)
             
             dpg.add_spacer(height=15)
+            with dpg.group(horizontal=True):
+
+                # Music Buttons
+                # Play Button
+                dpg.add_image_button("__texture_play", tag="__btn_play", callback=self._btn_play_callback, show=False)
+                with dpg.tooltip("__btn_play"):
+                    dpg.add_text("Play the music")
+
+                # Pause Button
+                dpg.add_image_button("__texture_pause", tag="__btn_pause", callback=self._btn_pause_callback, show=False)
+                with dpg.tooltip("__btn_pause"):
+                    dpg.add_text("Pause the music")
+
+                # Restart Button
+                dpg.add_image_button("__texture_restart", tag="__btn_restart", callback=self._btn_restart_callback, show=False)
+                with dpg.tooltip("__btn_restart"):
+                    dpg.add_text("Restart the music")
 
 
-            # TODO: add music player from pygame and INTEGRATE
-            # me right now:
-            #             ⠀⠀⠀⠀⠀⠀   ⢀⣠⣖⣱⣞⡿⣽⣯⣿⣳⠄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-            # ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⠩⠚⣺⠿⠿⠛⣉⠡⢉⠻⣟⡛⠛⠲⢦⣼⣝⢦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-            # ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣤⢶⠀⣀⡤⠶⣾⠋⣐⡆⡑⢠⠃⡶⢀⢂⡙⢧⡁⢊⢿⣞⣾⢿⢦⣤⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-            # ⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡼⣿⡿⠋⠡⢰⡟⢁⢂⢾⠀⠔⠂⢼⡇⢤⠂⡔⡈⣷⠠⡈⢷⡉⠛⢿⣷⣹⣆⠀⠀⠀⠀⠀⠀⠀⠀
-            # ⠀⠀⠀⠀⠀⠀⠀⠀⣠⢾⣿⡿⠡⠌⣵⠋⡐⡼⢃⣾⢈⠘⡈⣿⡄⣻⡆⡐⠄⡸⣆⠡⠌⢻⡐⠠⢿⣿⡼⣆⠀⠀⠀⠀⠀⠀⠀⠀
-            # ⠀⠀⠀⠀⠀⠀⠀⢠⣿⢿⡿⢁⠒⣼⢁⠂⡼⢡⡏⡸⡜⣇⠐⢻⢬⣱⡇⡑⣮⡀⢹⠠⢉⠘⢇⠡⢺⣿⣳⣿⣦⠀⠀⠀⠀⠀⠀⠀
-            # ⠀⠀⠀⠀⠀⠀⣰⣯⢿⣿⠃⡬⢁⣧⡼⢲⣷⣿⢳⣻⢧⠱⢺⣹⢶⣿⢿⣳⣿⡾⡾⣝⡠⣇⡦⢂⠹⠸⣷⣽⢼⣧⠀⠀⠀⠀⠀⠀
-            # ⠀⠀⠀⠀⣠⣴⡏⣠⡞⢡⡌⢡⣼⠧⣟⣟⣾⣯⠾⣯⣿⣧⢦⣿⣿⣿⣮⣙⣻⣷⣿⣿⣇⢠⠿⣀⠡⠂⢏⢳⣝⣞⠇⠀⠀⠀⠀⠀
-            # ⠀⠀⠀⢰⣯⣿⣾⢧⡔⣺⠔⣿⢾⣿⣿⣿⣿⠿⠿⣿⣟⡿⣯⣳⣿⣯⣿⣿⣿⣿⣿⣿⣿⣚⠧⣼⢡⠊⣆⠶⣹⢿⡄⣀⠀⠀⠀⠀
-            # ⠀⠀⠀⢼⣿⣿⣱⣎⣾⣻⢍⣿⣾⣿⡿⠋⢀⣤⡀⠙⣿⣟⣿⣿⡽⣿⣿⠉⣀⡀⠈⠹⣿⡿⣼⡏⣟⢶⡟⢮⡕⣮⣽⣿⣳⠀⠀⠀
-            # ⠀⠀⠀⢸⣼⡯⣿⣿⡞⡿⣏⡽⣻⡟⠃⣀⣈⣥⣤⡤⣻⣿⡟⣿⣛⣿⢋⣄⣈⡁⠀⠀⣽⣿⢾⣟⣭⡟⣿⣡⡿⣻⢿⡽⠏⠀⠀⠀
-            # ⠀⠀⠀⠀⠉⠙⢻⣿⡼⢷⡟⣭⢿⣳⣮⣽⣿⠿⠟⠛⠛⠙⡛⠙⠛⠛⠛⠿⢿⣟⡿⣦⣸⣿⣾⣼⡭⡟⣼⡹⢿⡙⠋⠀⠀⠀⠀⠀
-            # ⠀⠀⠀⠀⠀⠀⡴⣿⣿⣷⡜⡼⣿⠷⢋⠁⠠⡀⢂⣡⠶⠧⣬⡴⠶⢤⡉⠐⢄⠈⡙⠿⣽⣿⢾⡡⣟⣽⣽⣿⡿⣧⠀⠀⠀⠀⠀⠀
-            # ⠀⠀⠀⠀⠀⠀⠙⠻⣿⣿⣧⠳⣼⡆⠠⢈⡐⢀⢲⣇⣀⣀⣀⣀⣀⡀⢳⡌⢀⠒⠠⠐⢨⣟⣱⣾⣷⣿⣿⣿⡽⠏⠀⠀⠀⠀⠀⠀
-            # ⠀⠀⠀⠀⠀⠀⠀⠀⠹⣞⣿⣷⣤⣹⣄⠡⢀⣺⣏⠉⣠⠖⠚⠲⣍⠉⠛⣷⡄⠌⢂⢡⡟⢈⣷⣿⣿⢻⣷⠋⠀⠀⠀⠀⠀⠀⠀⠀
-            # ⠀⠀⠀⠀⠀⠀⠀⠀⢰⢿⡼⣷⣮⣝⡻⢦⡄⠻⠶⠋⢁⣼⣛⣦⡈⠳⣌⡽⠂⢈⣠⣾⣫⣿⣾⡿⠿⣯⡗⠀⠀⠀⠀⠀⠀⠀⠀⠀
-            # ⠀⠀⠀⠀⠀⠀⠀⠀⠸⣿⣿⣛⡿⢿⣿⣽⣿⣥⡀⠑⠊⠜⠉⡇⠃⡐⠠⢀⣽⣾⣿⣿⣿⡏⢭⣻⡿⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-            # ⠀⠀⠀⠀⠀⠀⣠⣴⣿⢽⣦⡈⠉⠉⣻⣽⣿⣧⢛⡳⣮⣤⣁⣐⣤⡶⢟⢫⣼⣿⡿⣟⣥⠀⠀⠀⠀⠀⢰⠦⢤⣄⡀⠀⠀⠀⠀⠀
-            # ⠀⠀⠀⠀⣠⣾⣻⣷⠿⢋⠍⡟⠓⠶⣯⡿⣿⣶⣯⣹⢭⣭⢋⢽⣭⣭⣯⣗⣶⣾⠿⣷⣖⠁⣀⣤⠴⢲⠾⣯⣻⢯⣻⣶⡄⠀⠀⠀
-            # ⠀⠀⢀⣴⣿⡿⠟⡡⠎⡜⢢⠱⣚⠛⠳⣽⣿⣿⣿⣿⣿⣧⠎⣼⣸⣿⣿⣿⣿⣿⣝⢶⡹⢫⠗⢦⣤⡏⡒⢤⡉⠷⣗⢷⡗⠀⠀⠀
-            # ⠀⠀⢸⣻⡟⣡⢋⢴⡩⢜⡡⢓⠬⣉⠓⣼⣿⣿⣿⣿⣿⣯⣗⣼⣹⣿⣿⣿⣿⣿⣿⡏⡔⢣⠚⡔⢢⠱⣉⠦⣉⠖⡩⢿⡄⠀⠀⠀
-            # ⠀⠀⣻⣿⠓⣤⡟⢫⡗⢪⡔⣋⢖⡩⢎⣿⣿⣿⣿⣿⣿⣿⣻⣟⣿⣿⣿⣿⣿⣿⣿⡷⣘⠥⣋⠼⣡⢓⡌⣖⡳⢮⡱⢩⣇⠀⠀⠀
-            # ⠀⢰⣟⣿⠽⣇⠰⢸⣏⢲⡱⢬⣆⢇⣻⣿⣿⣿⣿⣿⣿⣿⣷⣾⣿⣿⣿⣿⣿⣿⣿⣿⢠⡛⢤⣷⡘⣆⡓⢦⣻⠄⢛⢧⣻⡀⠀
-            # ⠀⣏⣾⡏⣞⡜⣳⣽⣮⡗⣼⠟⣻⠔⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢿⠿⢿⡆⡝⣾⢉⣷⠸⣜⢥⢺⣬⢶⡋⡽⡇⠀
-            # ⢰⣷⡿⣘⣧⣚⠥⣾⣻⣵⢏⡢⣹⢯⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣼⣾⣸⣧⣹⢇⢊⠼⣟⡿⣎⡝⢦⢣⣝⠲⡇⠀
-
-
+            # Save Buttons
+            dpg.add_spacer(height=10)
             with dpg.group(horizontal=True):
 
                 # Save Mid button
@@ -264,5 +290,5 @@ class Interface:
                     dpg.add_text("Save the input text into a .txt file\n"
                                 "You can import this text file after")
 
-            # set font of specific widget
+            # set default font
             dpg.bind_font(_default_font)
