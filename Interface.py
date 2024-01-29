@@ -1,5 +1,6 @@
-import dearpygui.dearpygui as dpg
+import os
 import time
+import dearpygui.dearpygui as dpg
 from textprocessing import TextConverter, Music, Rules
 from AudioConverter import AudioConverter
 
@@ -9,8 +10,8 @@ class Interface:
     Contém os métodos para ler o texto de entrada do usuário.
     """
     # TODO: 
-    # beautify interface (noggers)
-    # __ tags for diff
+    # add tooltips
+    # organize files
 
     # Consts
     MIN_BPM_VALUE = 20
@@ -32,7 +33,7 @@ class Interface:
         dpg.create_viewport(title='Title', width=self.WINDOW_WIDTH, height=self.WINDOW_HEIGHT)
         dpg.setup_dearpygui()
         dpg.show_viewport()
-        dpg.set_primary_window("main_window", True)
+        dpg.set_primary_window("__main_window", True)
 
     # Run the interface (public)
     def run(self):
@@ -69,42 +70,42 @@ class Interface:
         _show_btn_save_flag = True
 
         # clear error messages
-        for input_error_tag in ["_text_input_error", "_bpm_input_error", "_filename_input_error"]:
+        for input_error_tag in ["__text_input_error", "__bpm_input_error", "__filename_input_error"]:
             dpg.configure_item(item=input_error_tag, show=False)
 
-        _values = dpg.get_values(["_text_input", "_bpm_input", "_filename_input"])
+        _values = dpg.get_values(["__text_input", "__bpm_input", "__filename_input"])
         
         # verify input values
         if not _values[0]:
-            _show_error("_text_input_error", "Text input is required")
+            _show_error("__text_input_error", "Text input is required")
             _show_btn_save_flag = False
         
         if not (self.MIN_BPM_VALUE <= int(_values[1]) <= self.MAX_BPM_VALUE):
-            _show_error("_bpm_input_error", f'BPM value must be between {self.MIN_BPM_VALUE} and {self.MAX_BPM_VALUE}')
+            _show_error("__bpm_input_error", f'BPM value must be between {self.MIN_BPM_VALUE} and {self.MAX_BPM_VALUE}')
             _show_btn_save_flag = False
         
         if not _values[2]:
-            _show_error("_filename_input_error", "Filename is required")
+            _show_error("__filename_input_error", "Filename is required")
             _show_btn_save_flag = False
 
         if _show_btn_save_flag:
 
             # present a loading indicator for couple seconds
-            dpg.configure_item(item="_loading_indicator", show=True)
+            dpg.configure_item(item="__loading_indicator", show=True)
             time.sleep(2)
-            dpg.configure_item(item="_loading_indicator", show=False)
+            dpg.configure_item(item="__loading_indicator", show=False)
 
             # integrate the input values with the Music class 
             _string_to_music = self._file_content + _values[0]
-            _rules = Rules(self._music.get_ticks(), 120, 64, 4, 0)
+            _rules = Rules(self._music.get_ticks(), _values[1], 64, 4, 0)
             _converter = TextConverter(_string_to_music, _rules)
             _converter.compose(self._music)
             self._music.save("sample.mid")
             _recorder = AudioConverter(self._music)
 
             # show save buttons
-            dpg.configure_item(item="_btn_save_mid", show=True)
-            dpg.configure_item(item="_btn_save_txt", show=True)
+            dpg.configure_item(item="__btn_save_mid", show=True)
+            dpg.configure_item(item="__btn_save_txt", show=True)
             
             # play the song
             _recorder.playback()
@@ -112,41 +113,46 @@ class Interface:
 
     # save the generated song into a mid file after the generation of the song
     def _btn_save_mid(self):
-        _filename = dpg.get_value("_filename_input")
+        _filename = dpg.get_value("__filename_input")
 
         # handle callback writing the input text in the dir/filename specified
         def _save_mid_callback(sender, app_data):
             _selected_directory = app_data["file_path_name"]
             _full_path = f"{_selected_directory}/{_filename}"
             self._music.save(_full_path)
-            dpg.configure_item(item="_saved_mid", default_value="Saved .mid File!", show=True, color=(0, 255, 0, 255))
+            dpg.configure_item(item="__saved_mid", default_value="Saved .mid File!", show=True, color=(0, 255, 0, 255))
 
         # open dir selector for the mid file
-        with dpg.file_dialog(directory_selector=True, show=True, tag="file_dialog_tag", callback=_save_mid_callback, width=self.MENU_WIDTH, height=self.MENU_HEIGHT):
+        with dpg.file_dialog(directory_selector=True, show=True, tag="__file_dialog_tag", callback=_save_mid_callback, width=self.MENU_WIDTH, height=self.MENU_HEIGHT):
             pass
 
     # save the input text as a txt file after the generation of the song 
     def _btn_save_txt(self):
-        _filename = dpg.get_value("_filename_input")
+        _filename = dpg.get_value("__filename_input")
 
         # handle callback writing the input text in the dir/filename specified
         def _save_mid_callback(sender, app_data):
             _selected_directory = app_data["file_path_name"]
             _full_path = f"{_selected_directory}/{_filename}"
             with open(_full_path, "w") as file:
-                _text = dpg.get_value("_text_input")
+                _text = dpg.get_value("__text_input")
                 file.write(_text)
             
-            dpg.configure_item(item="_saved_txt", default_value="Saved .txt File!", show=True, color=(0, 255, 0, 255))
+            dpg.configure_item(item="__saved_txt", default_value="Saved .txt File!", show=True, color=(0, 255, 0, 255))
 
         # open dir selector for the txt file
-        with dpg.file_dialog(directory_selector=True, show=True, tag="file_dialog_tag", callback=_save_mid_callback, width=self.MENU_WIDTH, height=self.MENU_HEIGHT):
+        with dpg.file_dialog(directory_selector=True, show=True, tag="__file_dialog_tag", callback=_save_mid_callback, width=self.MENU_WIDTH, height=self.MENU_HEIGHT):
             pass
-
 
     # Sets up the interface (private)    
     def _setup_interface(self):
-        with dpg.window(tag="main_window"):
+        # add a font registry
+        with dpg.font_registry():
+            # library limitations only supports full path of the font
+            _cur_dir = os.getcwd()
+            _default_font = dpg.add_font(f'{_cur_dir}/UbuntuMono.ttf', 16)
+
+        with dpg.window(tag="__main_window"):
             with dpg.menu_bar():
                 with dpg.menu(label="File"):
                     dpg.add_menu_item(label="Import File", callback=self._menu_import)
@@ -154,24 +160,24 @@ class Interface:
 
             # Input text
             dpg.add_text("Your Text")
-            dpg.add_input_text(tag="_text_input", multiline=True)
-            dpg.add_text(tag="_text_input_error", show=False)
+            dpg.add_input_text(tag="__text_input", multiline=True)
+            dpg.add_text(tag="__text_input_error", show=False)
             
             # Input BPM
             dpg.add_text("BPM")
-            dpg.add_input_int(tag="_bpm_input", min_value=self.MIN_BPM_VALUE, max_value=self.MAX_BPM_VALUE, min_clamped=True, max_clamped=True)
-            dpg.add_text(tag="_bpm_input_error", show=False)
+            dpg.add_input_int(tag="__bpm_input", min_value=self.MIN_BPM_VALUE, max_value=self.MAX_BPM_VALUE, min_clamped=True, max_clamped=True)
+            dpg.add_text(tag="__bpm_input_error", show=False)
             
             # Input Filename
             dpg.add_text("Filename")
-            dpg.add_input_text(tag="_filename_input")
-            dpg.add_text(tag="_filename_input_error", show=False)
+            dpg.add_input_text(tag="__filename_input")
+            dpg.add_text(tag="__filename_input_error", show=False)
             
             dpg.add_button(label="Generate", callback=self._btn_generate)
             
             dpg.add_separator()
 
-            dpg.add_loading_indicator(tag="_loading_indicator", show=False)
+            dpg.add_loading_indicator(tag="__loading_indicator", show=False)
 
             # TODO: add music player from pygame and INTEGRATE
             # me right now:
@@ -201,8 +207,11 @@ class Interface:
             # ⠀⣏⣾⡏⣞⡜⣳⣽⣮⡗⣼⠟⣻⠔⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢿⠿⢿⡆⡝⣾⢉⣷⠸⣜⢥⢺⣬⢶⡋⡽⡇⠀
             # ⢰⣷⡿⣘⣧⣚⠥⣾⣻⣵⢏⡢⣹⢯⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣼⣾⣸⣧⣹⢇⢊⠼⣟⡿⣎⡝⢦⢣⣝⠲⡇⠀
 
-            dpg.add_button(tag="_btn_save_mid", label="Save Mid", callback=self._btn_save_mid, show=False)
-            dpg.add_text(tag="_saved_mid", show=False)
+            dpg.add_button(tag="__btn_save_mid", label="Save Mid", callback=self._btn_save_mid, show=False)
+            dpg.add_text(tag="__saved_mid", show=False)
 
-            dpg.add_button(tag="_btn_save_txt", label="Save Text", callback=self._btn_save_txt, show=False)
-            dpg.add_text(tag="_saved_txt", show=False)
+            dpg.add_button(tag="__btn_save_txt", label="Save Text", callback=self._btn_save_txt, show=False)
+            dpg.add_text(tag="__saved_txt", show=False)
+
+            # set font of specific widget
+            dpg.bind_font(_default_font)
