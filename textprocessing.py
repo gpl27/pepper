@@ -121,7 +121,7 @@ class Rules:
             '+': self._p_map,
             '-': self._m_map,
             '?': self._rnote_map,
-            '\n': self._nl_map, # TODO: escolher para qual instrumento mudar
+            '\n': self._nl_map,
             ';': self._sc_map,
             '': self._NOP
         }
