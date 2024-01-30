@@ -17,9 +17,18 @@ class AudioConverter:
         pygame.mixer.init(freq, bitsize, channels, buffer)
         pygame.mixer.music.set_volume(0.8) # optional volume 0 to 1.0
         pygame.mixer.music.load(self.music.filename)
+        self.paused = False
 
     def playback(self):
-        pygame.mixer.music.play()
+        print(self.paused)
+        if self.paused == True:
+            print(self.paused)
+            pygame.mixer.music.unpause()
+            self.paused = False
+            print(self.paused)
+        elif not pygame.mixer.music.get_busy():
+            pygame.mixer.music.play()
+            
 
     def is_playing(self):
         return pygame.mixer.music.get_busy()
@@ -27,8 +36,7 @@ class AudioConverter:
     def pause(self):
         if pygame.mixer.music.get_busy():
             pygame.mixer.music.pause()
-        else:
-            pygame.mixer.music.unpause()
+            self.paused = True
 
     def restart(self):
         pygame.mixer.music.rewind()

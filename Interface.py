@@ -97,39 +97,38 @@ class Interface:
             time.sleep(2)
             dpg.configure_item(item="__loading_indicator", show=False)
 
-            # TODO: acho que tenq tira isso daqui e mover pra algum callback aqui embaixo 
-            # integrate the input values with the Music class                       # |
-            _string_to_music = self._file_content + _values[0]                      # |
-            _rules = Rules(self._music.get_ticks(), _values[1], 64, 4, 0)           # |
-            _converter = TextConverter(_string_to_music, _rules)                    # |
-            _converter.compose(self._music)                                         # |
-            self._music.save("sample.mid")                                          # |
-            _recorder = AudioConverter(self._music)                                 # |
-                                                                                    # |
-            # show music buttons                                                    # |
-            dpg.configure_item(item="__btn_play", show=True)                        # |
-            dpg.configure_item(item="__btn_pause", show=True)                       # |
-            dpg.configure_item(item="__btn_restart", show=True)                     # |  
-                                                                                    # |  
-            # show save buttons                                                     # |  
-            dpg.configure_item(item="__btn_save_mid", show=True)                    # |  
-            dpg.configure_item(item="__btn_save_txt", show=True)                    # |  
-                                                                                    # |  
-            # play the song                                                         # |  
-            _recorder.playback()                                                    # |  
-                                                                                    # |  
-    # TODO: todo (só toca musica depois que o botao é clicado)   <<<<------------------
+            # integrate the input values with the Music class                       
+            _string_to_music = self._file_content + _values[0]                      
+            _rules = Rules(self._music.get_ticks(), _values[1], 64, 4, 0)           
+            _converter = TextConverter(_string_to_music, _rules)
+            self._music = Music()                    
+            _converter.compose(self._music)                                         
+            self._music.save("sample.mid")
+            self._recorder = AudioConverter(self._music)                                                                          
+                                                                                    
+            # show music buttons                                                    
+            dpg.configure_item(item="__btn_play", show=True)                        
+            dpg.configure_item(item="__btn_pause", show=True)                       
+            dpg.configure_item(item="__btn_restart", show=True)                       
+                                                                                      
+            # show save buttons                                                       
+            dpg.configure_item(item="__btn_save_mid", show=True)                      
+            dpg.configure_item(item="__btn_save_txt", show=True)                      
+                                                                                      
+                                                               
+                                                                                      
     # play the generated music
-    def _btn_play_callback():
-        pass
+    def _btn_play_callback(self):
+         # play the song                                                           
+        self._recorder.playback()  
 
     # pause the generated music
-    def _btn_pause_callback():
-        pass
+    def _btn_pause_callback(self):
+        self._recorder.pause()
 
     # restart the generated music
-    def _btn_restart_callback():
-        pass
+    def _btn_restart_callback(self):
+        self._recorder.restart()
 
     # save the generated song into a mid file after the generation of the song
     def _btn_save_mid(self):
@@ -138,12 +137,12 @@ class Interface:
         # handle callback writing the input text in the dir/filename specified
         def _save_mid_callback(sender, app_data):
             _selected_directory = app_data["file_path_name"]
-            _full_path = f"{_selected_directory}/{_filename}"
+            _full_path = f"{_selected_directory}/{_filename}.mid"
             self._music.save(_full_path)
             dpg.configure_item(item="__saved_mid", default_value="Saved .mid File!", show=True, color=(0, 255, 0, 255))
 
         # open dir selector for the mid file
-        with dpg.file_dialog(directory_selector=True, show=True, tag="__file_dialog_tag", callback=_save_mid_callback, width=self.MENU_WIDTH, height=self.MENU_HEIGHT):
+        with dpg.file_dialog(directory_selector=True, show=True, tag="__file_dialog_mid", callback=_save_mid_callback, width=self.MENU_WIDTH, height=self.MENU_HEIGHT):
             pass
 
     # save the input text as a txt file after the generation of the song 
@@ -151,9 +150,9 @@ class Interface:
         _filename = dpg.get_value("__filename_input")
 
         # handle callback writing the input text in the dir/filename specified
-        def _save_mid_callback(sender, app_data):
+        def _save_txt_callback(sender, app_data):
             _selected_directory = app_data["file_path_name"]
-            _full_path = f"{_selected_directory}/{_filename}"
+            _full_path = f"{_selected_directory}/{_filename}.txt"
             with open(_full_path, "w") as file:
                 _text = dpg.get_value("__text_input")
                 file.write(_text)
@@ -161,7 +160,7 @@ class Interface:
             dpg.configure_item(item="__saved_txt", default_value="Saved .txt File!", show=True, color=(0, 255, 0, 255))
 
         # open dir selector for the txt file
-        with dpg.file_dialog(directory_selector=True, show=True, tag="__file_dialog_tag", callback=_save_mid_callback, width=self.MENU_WIDTH, height=self.MENU_HEIGHT):
+        with dpg.file_dialog(directory_selector=True, show=True, tag="__file_dialog_txt", callback=_save_txt_callback, width=self.MENU_WIDTH, height=self.MENU_HEIGHT):
             pass
 
     # Sets up the interface (private)    
