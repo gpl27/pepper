@@ -39,4 +39,4 @@ class AudioConverter:
             self.paused = True
 
     def restart(self):
-        pygame.mixer.music.rewind()
+        pygame.mixer.music.play()
